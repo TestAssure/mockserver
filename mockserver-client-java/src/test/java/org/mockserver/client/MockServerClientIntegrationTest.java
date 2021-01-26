@@ -433,6 +433,9 @@ public class MockServerClientIntegrationTest {
         // when
         assertThat(echoServerOne.getWebsocketChannels().size(), is(1));
         Channel initialChannel = echoServerOne.getWebsocketChannels().get(0);
+        
+        echoServerOne.getWebsocketChannels().get(0).write("test");
+        
         new ArrayList<>(echoServerOne.getWebsocketChannels()).forEach(ChannelOutboundInvoker::close);
 
         SECONDS.sleep(1);

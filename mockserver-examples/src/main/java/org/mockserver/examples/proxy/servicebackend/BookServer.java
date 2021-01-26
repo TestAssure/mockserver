@@ -109,6 +109,7 @@ public class BookServer {
         @Override
         public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
             FullHttpResponse response = null;
+            
             if (request.uri().startsWith("/get_books")) {
                 response = new DefaultFullHttpResponse(HTTP_1_1, OK,
                     Unpooled.wrappedBuffer(
@@ -131,7 +132,9 @@ public class BookServer {
                         response.headers().set(CONTENT_LENGTH, response.content().readableBytes());
                     }
                 }
-            }
+            } 
+            
+            
             if (response == null) {
                 response = new DefaultFullHttpResponse(HTTP_1_1, NOT_FOUND);
             }

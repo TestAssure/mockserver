@@ -1,25 +1,9 @@
 package org.mockserver.examples.proxy.web.controller;
 
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.mockserver.examples.proxy.model.Book;
-import org.mockserver.examples.proxy.web.controller.pageobjects.BookPage;
-import org.mockserver.examples.proxy.web.controller.pageobjects.BooksPage;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.Header;
-import org.mockserver.model.Parameter;
-import org.springframework.core.env.Environment;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.web.context.WebApplicationContext;
-
-import javax.annotation.Resource;
-import java.util.Arrays;
-
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
+import static io.netty.handler.codec.http.HttpHeaderNames.UPGRADE;
+
 import static org.mockserver.character.Character.NEW_LINE;
 import static org.mockserver.integration.ClientAndServer.startClientAndServer;
 import static org.mockserver.model.HttpRequest.request;
@@ -31,11 +15,35 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup;
 
+import java.util.Arrays;
+
+import javax.annotation.Resource;
+
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.mockserver.examples.proxy.model.Book;
+import org.mockserver.examples.proxy.web.controller.pageobjects.BookPage;
+import org.mockserver.examples.proxy.web.controller.pageobjects.BooksPage;
+import org.mockserver.integration.ClientAndServer;
+import org.mockserver.model.Header;
+import org.mockserver.model.Headers;
+import org.mockserver.model.Parameter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.context.WebApplicationContext;
+
 /**
  * @author jamesdbloom
  */
 public abstract class BooksPageIntegrationTest {
-
+	private static Logger logger = LoggerFactory.getLogger(BooksPageIntegrationTest.class);
+	
     private static ClientAndServer proxy;
     private static ClientAndServer mockServer;
     @Resource
@@ -184,4 +192,25 @@ public abstract class BooksPageIntegrationTest {
         );
     }
 
+    @Test
+    public void testWebSocket() throws Exception {
+    	logger.info("Starting websocket test...");
+    	
+    	testProxyTypeEnabled();
+    	mockServer.when(
+    			request()
+    				.withPath("/primus")
+    				.withHeaders(
+    					new Header(CONNECTION.toString(), "Upgrade")
+    				)
+    			).respond( 
+    				response()
+    					.withStatusCode(101)
+    					.withHeaders( 
+    						new Header(CONNECTION.toString(), "application/json"),
+    						new Header(UPGRADE.toString(), "websocket")
+    					)
+    			);
+    	
+    }
 }
