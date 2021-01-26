@@ -44,6 +44,10 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
         return new HttpRequest().withPath(path);
     }
 
+    public void upgradeToWebSocket() {
+    	
+    }
+    
     public Boolean isKeepAlive() {
         return keepAlive;
     }
