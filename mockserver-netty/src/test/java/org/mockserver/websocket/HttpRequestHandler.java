@@ -28,7 +28,7 @@ import io.netty.handler.stream.ChunkedNioFile;
 public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 	private static Logger logger = LoggerFactory.getLogger( HttpRequestHandler.class);
 	
-	private final String wsUri;
+//	private final String wsUri;
 	private static final File INDEX;
 
 	static {
@@ -42,9 +42,9 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
 		}
 	}
 
-	public HttpRequestHandler(String wsUri) {
-		this.wsUri = wsUri;
-	}
+//	public HttpRequestHandler(String wsUri) {
+//		this.wsUri = wsUri;
+//	}
 
 	@Override
 	public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
@@ -65,7 +65,10 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
 		
 //		if (wsUri.equalsIgnoreCase(request.getUri())) {
 		if (isWebSocketUpgrade ) {
+			logger.info("Upgrading to websocket connection");
 			ctx.fireChannelRead(request.retain());
+			
+//			ctx.pipeline().addLast(null)
 		} else {
 			if (HttpHeaders.is100ContinueExpected(request)) {
 				send100Continue(ctx);

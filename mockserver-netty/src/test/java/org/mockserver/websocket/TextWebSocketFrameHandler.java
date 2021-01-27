@@ -1,5 +1,8 @@
 package org.mockserver.websocket;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.group.ChannelGroup;
@@ -7,6 +10,8 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 
 public class TextWebSocketFrameHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
+	private static Logger logger = LoggerFactory.getLogger( TextWebSocketFrameHandler.class);
+	
 	private final ChannelGroup group;
 
 	public TextWebSocketFrameHandler(ChannelGroup group) {
@@ -26,6 +31,7 @@ public class TextWebSocketFrameHandler extends SimpleChannelInboundHandler<TextW
 
 	@Override
 	public void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame msg) throws Exception {
+		logger.info("Received websocket msg: " + msg.text() );
 		group.writeAndFlush(msg.retain());
 	}
 }

@@ -16,20 +16,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.channel.ChannelFuture;
+import okhttp3.OkHttpClient;
 
 public class WebSocketTest {
 	private static Logger logger = LoggerFactory.getLogger( WebSocketTest.class);
 	protected static SSLSocketFactory defaultSocketFactory;
 	
+	private static final int mockServerPort = 8080;
+	private static final int port = 8082;
+	private MockServer mockServer = null;
+	
 	@Test
 	public void testWebSocket() throws Exception {
 		
-		int port = 8082;
-		int mockServerPort = 8080;
-		
-		Runnable runnable = () -> {
-			
-			logger.info("Starting server");
+		Runnable runnable = () -> {			
+			logger.info("Starting server ...");
 			
 			final ChatServer endpoint = new ChatServer();
 			ChannelFuture future = endpoint.start(new InetSocketAddress(port));
@@ -42,12 +43,30 @@ public class WebSocketTest {
 			future.channel().closeFuture().syncUninterruptibly();
 		};
 		
-		Thread thread = new Thread( runnable );
+		Thread serverThread = new Thread( runnable );
 		
-		
-		thread.start();
-		
-		MockServer mockServer = new MockServer( mockServerPort );
+		try {
+			serverThread.start();
+			
+			startMockServer();					
+			
+			OkHttpClient httpClient = new OkHttpClient().newBuilder().build();
+						
+			WebSocketManager websocketMgr = new WebSocketManager();
+			websocketMgr.connect("localhost:" + port, httpClient);
+			
+			websocketMgr.send("Hello kitty");
+			
+			getMockServerRecording();
+			stopMockServer();
+		} finally {
+			logger.info( "Shutting down web server..." );
+			serverThread.interrupt();
+		}
+	}
+	
+	private void startMockServer() {
+		mockServer = new MockServer( mockServerPort );
 		
 		MockServerLogger mockServerLogger = new MockServerLogger();
 		KeyStoreFactory ksf = new KeyStoreFactory( mockServerLogger );
@@ -59,21 +78,18 @@ public class WebSocketTest {
 		System.setProperty( "http.proxyPort", mockServerPort + "" );
 		System.setProperty( "https.proxyHost", "localhost" );
 		System.setProperty( "https.proxyPort", mockServerPort + "" );
-		
-		logger.info( "Start test body..." );
-		
-		Thread.sleep(10000);
-		
+	}
+	
+	private void getMockServerRecording() {
 		Expectation[] recordedExpectations = new MockServerClient("localhost", mockServerPort)
-			    .retrieveRecordedExpectations(
-			        HttpRequest.request()
-			    );
-		
+				.retrieveRecordedExpectations( HttpRequest.request() );
+
 		logger.info( "Recorded expectations: " + recordedExpectations );
-		
+	}
+	private void stopMockServer() {
 		HttpsURLConnection.setDefaultSSLSocketFactory( defaultSocketFactory );
 		
 		mockServer.stop();
-		thread.interrupt();
 	}
+	
 }
