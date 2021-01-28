@@ -2,6 +2,7 @@ package org.mockserver.websocket;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 import org.mockserver.client.MockServerClient;
@@ -53,22 +54,23 @@ public class WebSocketTest {
 		try {
 			serverThread.start();
 			
-			startMockServer();					
+			startMockServer();	// Start Mock Server Proxy			
 			
 			Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", mockServerPort));
-			OkHttpClient httpClient = new OkHttpClient().newBuilder().proxy(proxy).build();
-			httpClient = new OkHttpClient().newBuilder().proxy(Proxy.NO_PROXY).build();
+			OkHttpClient client = new OkHttpClient().newBuilder()
+					.proxy(proxy)
+					.build();			
 			
-			Request.Builder builder = new Request.Builder()
-				      .url( "http://localhost:" + port + "/index.html" )
-				      .get();
+//			Request.Builder builder = new Request.Builder()
+//				      .url( "http://localhost:" + port + "/index.html" )
+//				      .get();
 			
-			Response indexPageResponse = httpClient.newCall(builder.build() ).execute();
-			String responseBody = indexPageResponse.body().string();
+//			Response indexPageResponse = httpClient.newCall(builder.build() ).execute();
+//			String responseBody = indexPageResponse.body().string();
 //			logger.info( "response body: " + responseBody );
 			
 			WebSocketManager websocketMgr = new WebSocketManager( "Batman" );
-			websocketMgr.connect("localhost:" + port, httpClient);
+			websocketMgr.connect("localhost:" + port, client);
 			
 			
 //			WebSocketManager websocketMgr2 = new WebSocketManager( "Robin" );
@@ -80,11 +82,10 @@ public class WebSocketTest {
 			websocketMgr.closeConnection();
 //			websocketMgr2.closeConnection();
 			
-//			getMockServerRecording();
-//			stopMockServer();
+			getMockServerRecording();
+			stopMockServer();
 			
 		} finally {
-			
 			logger.info( "Shutting down web server..." );
 			serverThread.interrupt();
 			Thread.sleep(1000);

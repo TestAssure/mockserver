@@ -42,7 +42,7 @@ public class WebSocketManager extends WebSocketListener {
 
 		webSocket = client.newWebSocket(request, this);
 
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < 20; i++) {
 			if (connected == true) {
 				return;
 			} else {
