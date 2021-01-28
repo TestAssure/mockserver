@@ -5,8 +5,8 @@ import java.io.RandomAccessFile;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -17,20 +17,26 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.codec.http.websocketx.WebSocketServerHandshaker;
+import io.netty.handler.codec.http.websocketx.WebSocketServerHandshakerFactory;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedNioFile;
 
 public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
-	private static Logger logger = LoggerFactory.getLogger( HttpRequestHandler.class);
+	private static Logger logger = LogManager.getLogger( HttpRequestHandler.class );
 	
 //	private final String wsUri;
 	private static final File INDEX;
-
+	WebSocketServerHandshaker handshaker;
+	
 	static {
 		URL location = HttpRequestHandler.class.getProtectionDomain().getCodeSource().getLocation();
 		try {
@@ -49,37 +55,36 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
 	@Override
 	public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
 		HttpHeaders headers = request.headers();
-//		headers.names().stream().forEach( (n) -> {
-//			logger.info( "Header: " + n + "=" + headers.get(n));
-//		});
 		
 		String connection = headers.get("CONNECTION");
 		String upgrade = headers.get("Upgrade");
 		
 		logger.info( "Connection=" + connection + " Upgrade=" + upgrade );
 		
-		boolean isWebSocketUpgrade = false;
-		if ( "Upgrade".equalsIgnoreCase(connection)) {
-			isWebSocketUpgrade = true;
-		}
-		
-//		if (wsUri.equalsIgnoreCase(request.getUri())) {
-		if (isWebSocketUpgrade ) {
+		if ("Upgrade".equalsIgnoreCase(headers.get(HttpHeaderNames.CONNECTION)) &&
+                 "WebSocket".equalsIgnoreCase(headers.get(HttpHeaderNames.UPGRADE))) {
 			logger.info("Upgrading to websocket connection");
-			ctx.fireChannelRead(request.retain());
-			
+//			ctx.fireChannelRead(request.retain());
+			ctx.pipeline().replace(this, "websocketHandler", new WebSocketHandler());
 //			ctx.pipeline().addLast(null)
+			
+			 logger.info("WebSocketHandler added to the pipeline");
+			 logger.info("Opened Channel : " + ctx.channel());
+			 logger.info("Handshaking....");
+             //Do the Handshake to upgrade connection from HTTP to WebSocket protocol
+             handleHandshake(ctx, request);
+             logger.info("Handshake is done");
 		} else {
-			if (HttpHeaders.is100ContinueExpected(request)) {
+			if (HttpUtil.is100ContinueExpected(request)) {
 				send100Continue(ctx);
 			}
 			RandomAccessFile file = new RandomAccessFile(INDEX, "r");
-			HttpResponse response = new DefaultHttpResponse(request.getProtocolVersion(), HttpResponseStatus.OK);
-			response.headers().set(HttpHeaders.Names.CONTENT_TYPE, "text/html; charset=UTF-8");
-			boolean keepAlive = HttpHeaders.isKeepAlive(request);
+			HttpResponse response = new DefaultHttpResponse(request.protocolVersion(), HttpResponseStatus.OK);
+			response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=UTF-8");
+			boolean keepAlive = HttpUtil.isKeepAlive(request);
 			if (keepAlive) {
-				response.headers().set(HttpHeaders.Names.CONTENT_LENGTH, file.length());
-				response.headers().set(HttpHeaders.Names.CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+				response.headers().set(HttpHeaderNames.CONTENT_LENGTH, file.length());
+				response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
 			}
 			ctx.write(response);
 			if (ctx.pipeline().get(SslHandler.class) == null) {
@@ -93,7 +98,25 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
 			}
 		}
 	}
+	
+	/* Do the handshaking for WebSocket request */
+    protected void handleHandshake(ChannelHandlerContext ctx, FullHttpRequest req) {
+        WebSocketServerHandshakerFactory wsFactory = new WebSocketServerHandshakerFactory(getWebSocketURL(req), null, true);
+        handshaker = wsFactory.newHandshaker(req);
+        if (handshaker == null) {
+            WebSocketServerHandshakerFactory.sendUnsupportedVersionResponse(ctx.channel());
+        } else {
+            handshaker.handshake(ctx.channel(), req);
+        }
+    }
 
+    protected String getWebSocketURL(FullHttpRequest req) {
+    	logger.info("Req URI : " + req.uri());
+        String url =  "ws://" + req.headers().get("Host") + req.uri() ;
+        logger.info("Constructed URL : " + url);
+        return url;
+    }
+    
 	private static void send100Continue(ChannelHandlerContext ctx) {
 		FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE);
 		ctx.writeAndFlush(response);

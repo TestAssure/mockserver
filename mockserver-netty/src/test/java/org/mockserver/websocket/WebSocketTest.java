@@ -6,17 +6,16 @@ import java.net.Proxy;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.logging.MockServerLogger;
 import org.mockserver.mock.Expectation;
 import org.mockserver.model.HttpRequest;
-import org.mockserver.netty.MockServer;
 import org.mockserver.socket.tls.KeyStoreFactory;
 import org.mockserver.stop.Stop;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.netty.channel.ChannelFuture;
 import okhttp3.OkHttpClient;
@@ -24,7 +23,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class WebSocketTest {
-	private static Logger logger = LoggerFactory.getLogger( WebSocketTest.class);
+	private static Logger logger = LogManager.getLogger( WebSocketTest.class );
 	protected static SSLSocketFactory defaultSocketFactory;
 	
 	private static final int mockServerPort = 1080;
@@ -32,6 +31,10 @@ public class WebSocketTest {
 //	private MockServer mockServer = null;
 	private ClientAndServer mockServer = null;
 	
+	static {
+//		System.setProperty("java.util.logging.config.file", "/Users/360capture/workspace/github/mockserver/mockserver-netty/src/test/resources/logging.properties");
+//		logger = Logger.getLogger(WebSocketTest.class.getName());
+	}
 	@Test
 	public void testWebSocket() throws Exception {
 		
@@ -54,7 +57,7 @@ public class WebSocketTest {
 		try {
 			serverThread.start();
 			
-			startMockServer();					
+//			startMockServer();					
 			
 			Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", mockServerPort));
 			OkHttpClient httpClient = new OkHttpClient().newBuilder().proxy(proxy).build();
@@ -68,16 +71,32 @@ public class WebSocketTest {
 			String responseBody = indexPageResponse.body().string();
 //			logger.info( "response body: " + responseBody );
 			
-			WebSocketManager websocketMgr = new WebSocketManager();
+			WebSocketManager websocketMgr = new WebSocketManager( "Batman" );
 			websocketMgr.connect("localhost:" + port, httpClient);
 			
-			websocketMgr.send("Hello kitty");
 			
-			getMockServerRecording();
-			stopMockServer();
+			
+//			Thread.sleep(1000);
+			
+			WebSocketManager websocketMgr2 = new WebSocketManager( "Robin" );
+			websocketMgr2.connect("localhost:" + port, httpClient);
+			
+			websocketMgr.send("Hello kitty");
+			websocketMgr2.send("Hello kitty 2");
+			
+//			Thread.sleep(1000);
+			
+			websocketMgr.closeConnection();
+			websocketMgr2.closeConnection();
+			
+//			getMockServerRecording();
+//			stopMockServer();
+			
 		} finally {
+			
 			logger.info( "Shutting down web server..." );
 			serverThread.interrupt();
+			Thread.sleep(1000);
 		}
 	}
 	

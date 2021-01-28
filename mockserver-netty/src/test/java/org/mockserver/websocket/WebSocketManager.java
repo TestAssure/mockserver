@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
@@ -17,14 +17,19 @@ import okhttp3.WebSocketListener;
 import okio.ByteString;
 
 public class WebSocketManager extends WebSocketListener {
-	private static Logger logger = LoggerFactory.getLogger( WebSocketManager.class);
+	private static Logger logger = LogManager.getLogger( WebSocketManager.class );
 	
 	private WebSocket webSocket;
-
+	private String name;
+	
 	private boolean connected = false;
 	private String lastMessage;
 	private List<String> unreadMessages = Collections.synchronizedList(new ArrayList<>());
 
+	public WebSocketManager( String name ) {
+		this.name = name;
+	}
+	
 	public void connect(String host, OkHttpClient client) {
 
 		String wssPath = "ws://" + host + "/ws";
@@ -52,9 +57,15 @@ public class WebSocketManager extends WebSocketListener {
 		Preconditions.checkState(connected, "Unable to create WebSocket connection to " + host);
 	}
 
+	public synchronized void closeConnection() {
+//		webSocket.cancel();
+		webSocket.close(1000, "Stop");
+//		webSocket.cancel();
+	}
+	
 	public synchronized String send( String message) {
 		try {
-			logger.info( "Send msg:" + message );
+			logger.info( name + ": Send msg->" + message );
 //			lastMessage = null;
 			unreadMessages.clear();
 			webSocket.send( message );
@@ -88,7 +99,7 @@ public class WebSocketManager extends WebSocketListener {
 
 	@Override
 	public void onMessage(WebSocket webSocket, String text) {
-		logger.info("MESSAGE RECV: " + text);
+		logger.info( name + ": MESSAGE RECV->" + text);
 
 		if (text.startsWith("\"primus::ping::")) {
 			String pingId = text.substring(15);
