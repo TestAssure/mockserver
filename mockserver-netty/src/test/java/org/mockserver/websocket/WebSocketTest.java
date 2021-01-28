@@ -70,7 +70,7 @@ public class WebSocketTest {
 //			logger.info( "response body: " + responseBody );
 			
 			WebSocketManager websocketMgr = new WebSocketManager( "Batman" );
-			websocketMgr.connect("localhost:" + port, client);
+			websocketMgr.connect("localhost:" + port, client, 1000);
 			
 			
 //			WebSocketManager websocketMgr2 = new WebSocketManager( "Robin" );

@@ -30,7 +30,7 @@ public class WebSocketManager extends WebSocketListener {
 		this.name = name;
 	}
 	
-	public void connect(String host, OkHttpClient client) {
+	public void connect(String host, OkHttpClient client, int retryMax ) {
 
 		String wssPath = "ws://" + host + "/ws";
 		logger.info("Connecting to " + wssPath);
@@ -42,7 +42,7 @@ public class WebSocketManager extends WebSocketListener {
 
 		webSocket = client.newWebSocket(request, this);
 
-		for (int i = 0; i < 20; i++) {
+		for (int i = 0; i < retryMax; i++) {
 			if (connected == true) {
 				return;
 			} else {

@@ -25,18 +25,18 @@ public class WebSocketHandler extends ChannelInboundHandlerAdapter {
             logger.info("Client Channel : " + ctx.channel());
             if (msg instanceof BinaryWebSocketFrame) {
             	logger.info("BinaryWebSocketFrame Received : ");
-                System.out.println(((BinaryWebSocketFrame) msg).content());
+//                System.out.println(((BinaryWebSocketFrame) msg).content());
             } else if (msg instanceof TextWebSocketFrame) {
             	logger.info("TextWebSocketFrame Received : ");
                 ctx.channel().writeAndFlush(	
                         new TextWebSocketFrame("Message recieved : " + ((TextWebSocketFrame) msg).text()));
                 logger.info(((TextWebSocketFrame) msg).text());
             } else if (msg instanceof PingWebSocketFrame) {
-                System.out.println("PingWebSocketFrame Received : ");
-                System.out.println(((PingWebSocketFrame) msg).content());
+            	logger.info("PingWebSocketFrame Received : ");
+//                System.out.println(((PingWebSocketFrame) msg).content());
             } else if (msg instanceof PongWebSocketFrame) {
-                System.out.println("PongWebSocketFrame Received : ");
-                System.out.println(((PongWebSocketFrame) msg).content());
+            	logger.info("PongWebSocketFrame Received : ");
+//            	logger.info( (PongWebSocketFrame) msg).content() );
             } else if (msg instanceof CloseWebSocketFrame) {
             	logger.info("CloseWebSocketFrame Received : ");
             	logger.info("ReasonText :" + ((CloseWebSocketFrame) msg).reasonText());

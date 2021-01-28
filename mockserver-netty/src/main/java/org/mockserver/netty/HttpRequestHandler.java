@@ -1,37 +1,11 @@
 package org.mockserver.netty;
 
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.base64.Base64;
-import io.netty.util.AttributeKey;
-import org.apache.commons.text.StringEscapeUtils;
-import org.mockserver.configuration.ConfigurationProperties;
-import org.mockserver.dashboard.DashboardHandler;
-import org.mockserver.lifecycle.LifeCycle;
-import org.mockserver.log.model.LogEntry;
-import org.mockserver.logging.MockServerLogger;
-import org.mockserver.mock.HttpState;
-import org.mockserver.mock.action.http.HttpActionHandler;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.MediaType;
-import org.mockserver.model.PortBinding;
-import org.mockserver.netty.proxy.connect.HttpConnectHandler;
-import org.mockserver.netty.responsewriter.NettyResponseWriter;
-import org.mockserver.responsewriter.ResponseWriter;
-import org.mockserver.scheduler.Scheduler;
-import org.mockserver.serialization.PortBindingSerializer;
-import org.slf4j.event.Level;
-
-import java.net.BindException;
-import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static io.netty.handler.codec.http.HttpResponseStatus.*;
+import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
+import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHENTICATE;
+import static io.netty.handler.codec.http.HttpHeaderNames.PROXY_AUTHORIZATION;
+import static io.netty.handler.codec.http.HttpResponseStatus.BAD_REQUEST;
+import static io.netty.handler.codec.http.HttpResponseStatus.OK;
+import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.mockserver.configuration.ConfigurationProperties.addSubjectAlternativeName;
 import static org.mockserver.exception.ExceptionHandling.closeOnFlush;
@@ -42,12 +16,47 @@ import static org.mockserver.model.PortBinding.portBinding;
 import static org.mockserver.netty.unification.PortUnificationHandler.enableSslUpstreamAndDownstream;
 import static org.mockserver.netty.unification.PortUnificationHandler.isSslEnabledUpstream;
 
+import java.net.BindException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.text.StringEscapeUtils;
+import org.mockserver.configuration.ConfigurationProperties;
+import org.mockserver.dashboard.DashboardHandler;
+import org.mockserver.lifecycle.LifeCycle;
+import org.mockserver.log.model.LogEntry;
+import org.mockserver.logging.MockServerLogger;
+import org.mockserver.mock.HttpState;
+import org.mockserver.mock.action.http.HttpActionHandler;
+import org.mockserver.model.Headers;
+import org.mockserver.model.HttpRequest;
+import org.mockserver.model.MediaType;
+import org.mockserver.model.PortBinding;
+import org.mockserver.netty.proxy.connect.HttpConnectHandler;
+import org.mockserver.netty.responsewriter.NettyResponseWriter;
+import org.mockserver.responsewriter.ResponseWriter;
+import org.mockserver.scheduler.Scheduler;
+import org.mockserver.serialization.PortBindingSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
+
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.base64.Base64;
+import io.netty.util.AttributeKey;
+
 /**
  * @author jamesdbloom
  */
 @ChannelHandler.Sharable
 public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest> {
-
+	private static Logger logger = LoggerFactory.getLogger( HttpRequestHandler.class );
+	
     public static final AttributeKey<Boolean> PROXYING = AttributeKey.valueOf("PROXYING");
     public static final AttributeKey<Set<String>> LOCAL_HOST_HEADERS = AttributeKey.valueOf("LOCAL_HOST_HEADERS");
     private MockServerLogger mockServerLogger;
@@ -89,8 +98,24 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
         try {
             addSubjectAlternativeName(request.getFirstHeader(HOST.toString()));
 
-            if (!httpState.handle(request, responseWriter, false)) {
-
+            // check if request is websocket
+            Headers headers = request.getHeaders();
+            List<String> connectionHeaders = headers.getValues( "CONNECTION" );
+            List<String> websocketHeaders = headers.getValues("Upgrade");
+            
+            boolean isWebSocketUpgradeRequest = false;
+            if( connectionHeaders != null && websocketHeaders != null &&
+            		connectionHeaders.size() > 0 && websocketHeaders.size() > 0 ) {
+            	if ("Upgrade".equalsIgnoreCase(connectionHeaders.get(0)) &&
+                        "WebSocket".equalsIgnoreCase(websocketHeaders.get(0))) {
+            		isWebSocketUpgradeRequest = true;
+            	}
+            }
+            if ( isWebSocketUpgradeRequest ) {
+            	logger.info("Upgrade to websocket");
+            	
+            } else if (!httpState.handle(request, responseWriter, false)) {
+            	
                 if (request.matches("PUT", PATH_PREFIX + "/status", "/status") ||
                     isNotBlank(ConfigurationProperties.livenessHttpGetPath()) && request.matches("GET", ConfigurationProperties.livenessHttpGetPath())) {
 
