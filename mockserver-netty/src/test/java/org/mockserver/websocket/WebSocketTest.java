@@ -3,19 +3,14 @@ package org.mockserver.websocket;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSocketFactory;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.Test;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.integration.ClientAndServer;
-import org.mockserver.logging.MockServerLogger;
 import org.mockserver.mock.Expectation;
 import org.mockserver.model.HttpRequest;
-import org.mockserver.socket.tls.KeyStoreFactory;
 import org.mockserver.stop.Stop;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.netty.channel.ChannelFuture;
 import okhttp3.OkHttpClient;
@@ -23,8 +18,9 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 public class WebSocketTest {
-	private static Logger logger = LogManager.getLogger( WebSocketTest.class );
-	protected static SSLSocketFactory defaultSocketFactory;
+	private static Logger logger = LoggerFactory.getLogger(WebSocketTest.class );
+//	private static Logger logger = LogManager.getLogger( WebSocketTest.class );
+//	protected static SSLSocketFactory defaultSocketFactory;
 	
 	private static final int mockServerPort = 1080;
 	private static final int port = 8082;
@@ -57,7 +53,7 @@ public class WebSocketTest {
 		try {
 			serverThread.start();
 			
-//			startMockServer();					
+			startMockServer();					
 			
 			Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", mockServerPort));
 			OkHttpClient httpClient = new OkHttpClient().newBuilder().proxy(proxy).build();
@@ -75,19 +71,14 @@ public class WebSocketTest {
 			websocketMgr.connect("localhost:" + port, httpClient);
 			
 			
-			
-//			Thread.sleep(1000);
-			
-			WebSocketManager websocketMgr2 = new WebSocketManager( "Robin" );
-			websocketMgr2.connect("localhost:" + port, httpClient);
+//			WebSocketManager websocketMgr2 = new WebSocketManager( "Robin" );
+//			websocketMgr2.connect("localhost:" + port, httpClient);
 			
 			websocketMgr.send("Hello kitty");
-			websocketMgr2.send("Hello kitty 2");
-			
-//			Thread.sleep(1000);
+//			websocketMgr2.send("Hello kitty 2");
 			
 			websocketMgr.closeConnection();
-			websocketMgr2.closeConnection();
+//			websocketMgr2.closeConnection();
 			
 //			getMockServerRecording();
 //			stopMockServer();
@@ -108,16 +99,16 @@ public class WebSocketTest {
         
 //		mockServer = new MockServer( mockServerPort );
 		
-		MockServerLogger mockServerLogger = new MockServerLogger();
-		KeyStoreFactory ksf = new KeyStoreFactory( mockServerLogger );
+//		MockServerLogger mockServerLogger = new MockServerLogger();
+//		KeyStoreFactory ksf = new KeyStoreFactory( mockServerLogger );
 
-		defaultSocketFactory = HttpsURLConnection.getDefaultSSLSocketFactory();
-		HttpsURLConnection.setDefaultSSLSocketFactory( ksf.sslContext().getSocketFactory() );
+//		defaultSocketFactory = HttpsURLConnection.getDefaultSSLSocketFactory();
+//		HttpsURLConnection.setDefaultSSLSocketFactory( ksf.sslContext().getSocketFactory() );
 
 		System.setProperty( "http.proxyHost", "localhost" );
 		System.setProperty( "http.proxyPort", mockServerPort + "" );
-		System.setProperty( "https.proxyHost", "localhost" );
-		System.setProperty( "https.proxyPort", mockServerPort + "" );
+//		System.setProperty( "https.proxyHost", "localhost" );
+//		System.setProperty( "https.proxyPort", mockServerPort + "" );
 	}
 	
 	private void getMockServerRecording() {
@@ -130,7 +121,7 @@ public class WebSocketTest {
 		
 	}
 	private void stopMockServer() {
-		HttpsURLConnection.setDefaultSSLSocketFactory( defaultSocketFactory );
+//		HttpsURLConnection.setDefaultSSLSocketFactory( defaultSocketFactory );
 		
 		Stop.stopQuietly(mockServer);
 		mockServer.stop();

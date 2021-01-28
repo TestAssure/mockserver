@@ -1,7 +1,7 @@
 package org.mockserver.websocket;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -13,7 +13,7 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 
 public class WebSocketHandler extends ChannelInboundHandlerAdapter {
-	private static Logger logger = LogManager.getLogger( WebSocketHandler.class );
+	private static Logger logger = LoggerFactory.getLogger( WebSocketHandler.class );
 	
 //	private static Logger logger = LoggerFactory.getLogger( WebSocketHandler.class );
 	
@@ -28,7 +28,7 @@ public class WebSocketHandler extends ChannelInboundHandlerAdapter {
                 System.out.println(((BinaryWebSocketFrame) msg).content());
             } else if (msg instanceof TextWebSocketFrame) {
             	logger.info("TextWebSocketFrame Received : ");
-                ctx.channel().writeAndFlush(
+                ctx.channel().writeAndFlush(	
                         new TextWebSocketFrame("Message recieved : " + ((TextWebSocketFrame) msg).text()));
                 logger.info(((TextWebSocketFrame) msg).text());
             } else if (msg instanceof PingWebSocketFrame) {

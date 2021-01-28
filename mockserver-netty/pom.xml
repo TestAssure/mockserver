@@ -74,11 +74,11 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
-        <dependency>
+<!--         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
-            <optional>true</optional> <!-- do not impose on project importing mock-server -->
-        </dependency>
+            <optional>true</optional> do not impose on project importing mock-server
+        </dependency> -->
 
 		<!-- log4j2 -->
 		<dependency>
@@ -91,11 +91,11 @@
 		    <artifactId>log4j-core</artifactId>
 		    <version>2.7</version>
 		</dependency>
-<!-- 		<dependency>
+		<dependency>
 		    <groupId>org.apache.logging.log4j</groupId>
 		    <artifactId>log4j-slf4j-impl</artifactId>
 		    <version>2.7</version>
-		</dependency> -->
+		</dependency>
         
         <!-- test -->
         <dependency>

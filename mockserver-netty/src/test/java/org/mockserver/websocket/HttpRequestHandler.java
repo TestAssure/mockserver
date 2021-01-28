@@ -5,8 +5,8 @@ import java.io.RandomAccessFile;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -31,7 +31,7 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.stream.ChunkedNioFile;
 
 public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
-	private static Logger logger = LogManager.getLogger( HttpRequestHandler.class );
+	private static Logger logger = LoggerFactory.getLogger( HttpRequestHandler.class );
 	
 //	private final String wsUri;
 	private static final File INDEX;
