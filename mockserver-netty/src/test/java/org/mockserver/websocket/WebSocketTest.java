@@ -58,29 +58,26 @@ public class WebSocketTest {
 			
 			Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", mockServerPort));
 			OkHttpClient client = new OkHttpClient().newBuilder()
+					.connectTimeout(5000, TimeUnit.SECONDS)
+					.readTimeout(500, TimeUnit.SECONDS)
+					.writeTimeout(500, TimeUnit.SECONDS)
 					.proxy(proxy)
 					.build();			
 			
 //			Request.Builder builder = new Request.Builder()
 //				      .url( "http://localhost:" + port + "/index.html" )
 //				      .get();
-			
-//			Response indexPageResponse = httpClient.newCall(builder.build() ).execute();
+//			
+//			Response indexPageResponse = client.newCall(builder.build() ).execute();
 //			String responseBody = indexPageResponse.body().string();
 //			logger.info( "response body: " + responseBody );
 			
+			// Send websocket request
 			WebSocketManager websocketMgr = new WebSocketManager( "Batman" );
-			websocketMgr.connect("localhost:" + port, client, 1000);
-			
-			
-//			WebSocketManager websocketMgr2 = new WebSocketManager( "Robin" );
-//			websocketMgr2.connect("localhost:" + port, httpClient);
-			
-			websocketMgr.send("Hello kitty");
-//			websocketMgr2.send("Hello kitty 2");
-			
-			websocketMgr.closeConnection();
-//			websocketMgr2.closeConnection();
+			websocketMgr.connect("localhost:" + port, client, 10, 50);
+//						
+//			websocketMgr.send("Hello kitty");			
+//			websocketMgr.closeConnection();
 			
 			getMockServerRecording();
 			stopMockServer();

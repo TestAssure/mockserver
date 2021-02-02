@@ -111,10 +111,11 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
             		isWebSocketUpgradeRequest = true;
             	}
             }
-            if ( isWebSocketUpgradeRequest ) {
-            	logger.info("Upgrade to websocket");
-            	
-            } else if (!httpState.handle(request, responseWriter, false)) {
+//            if ( isWebSocketUpgradeRequest ) {
+//            	logger.info("Upgrade to websocket");
+//            	
+//            } else 
+            if (!httpState.handle(request, responseWriter, false)) {
             	
                 if (request.matches("PUT", PATH_PREFIX + "/status", "/status") ||
                     isNotBlank(ConfigurationProperties.livenessHttpGetPath()) && request.matches("GET", ConfigurationProperties.livenessHttpGetPath())) {

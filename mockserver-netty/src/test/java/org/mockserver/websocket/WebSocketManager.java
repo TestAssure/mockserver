@@ -30,7 +30,7 @@ public class WebSocketManager extends WebSocketListener {
 		this.name = name;
 	}
 	
-	public void connect(String host, OkHttpClient client, int retryMax ) {
+	public void connect(String host, OkHttpClient client, int retryMax, int retryInterval ) {
 
 		String wssPath = "ws://" + host + "/ws";
 		logger.info("Connecting to " + wssPath);
@@ -47,7 +47,7 @@ public class WebSocketManager extends WebSocketListener {
 				return;
 			} else {
 				try {
-					Thread.sleep(50);
+					Thread.sleep(retryInterval);
 				} catch (Throwable e) {
 
 				}
